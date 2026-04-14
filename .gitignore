@@ -416,3 +416,10 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Haskell / Stack
+.stack-work/
+*.cabal
+*.hi
+*.o
+*.exe

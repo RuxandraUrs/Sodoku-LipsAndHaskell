@@ -1,0 +1,19 @@
+name: sudoku-haskell
+version: 0.1.0.0
+dependencies:
+  - base >= 4.7 && < 5
+  - HUnit
+  - QuickCheck
+
+executables:
+  Tests:
+    main: Tests.hs
+    source-dirs: .
+    dependencies:
+      - sudoku-haskell
+
+library:
+  source-dirs: .
+  exposed-modules:
+    - Sudoku
+    - Solver
