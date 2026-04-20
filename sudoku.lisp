@@ -59,12 +59,12 @@
        (valid-box? board row col val)))
 
 
-(defun gaseste-gol (board)
+(defun find-empty (board)
   (let ((size (board-size board)))
     (loop for r from 0 below size do
           (loop for c from 0 below size do
                 (when (= 0 (nth c (nth r board)))
-                  (return-from gaseste-gol (cons r c))))) 
+                  (return-from find-empty (cons r c))))) 
     nil))
 
 
@@ -76,33 +76,33 @@
 
 ;; Tests- to do: put in a another file
 ;; 0.1
-(format t "Prima celula goala: ~A~%" (gaseste-gol *example-board-4x4*))
+(format t "First empty cell: ~A~%" (find-empty *example-board-4x4*))
 
 ;; T
-(format t "Este valid 4 la (0,1)? ~A~%" (valid? *example-board-4x4* 0 1 4))
+(format t "Is 4 valid at (0,1)? ~A~%" (valid? *example-board-4x4* 0 1 4))
 
 ;; NIL
-(format t "Este valid 1 la (0,1)? ~A~%" (valid? *example-board-4x4* 0 1 1))
+(format t "Is 1 valid at (0,1)? ~A~%" (valid? *example-board-4x4* 0 1 1))
 
 ;; NIL
-(format t "Este valid 3 la (0,1)? ~A~%" (valid? *example-board-4x4* 0 1 3))
+(format t "Is 3 valid at (0,1)? ~A~%" (valid? *example-board-4x4* 0 1 3))
 
 
 ;; Solving logic using backtracking
-(defun rezolva (board)
-  (let ((celula-goala (gaseste-gol board)))
-    (if (not celula-goala)
+(defun solve (board)
+  (let ((empty-cell (find-empty board)))
+    (if (not empty-cell)
         board ;; found a solution
-        (let ((row (car celula-goala)) (col (cdr celula-goala)) (size (board-size board)))
+        (let ((row (car empty-cell)) (col (cdr empty-cell)) (size (board-size board)))
           (loop for val from 1 to size
                 do (when (valid? board row col val)
-                     (let ((rezultat (rezolva (set-value board row col val))))
-                       (when rezultat
-                         (return-from rezolva rezultat))))
+                     (let ((result (solve (set-value board row col val))))
+                       (when result
+                         (return-from solve result))))
                 finally (return nil)))))) ;; no solution
 
 ;; Print board in a readable format
-(defun afiseaza-sudoku (board)
+(defun print-sudoku (board)
   (let* ((size (length board))
          (box-size (isqrt size)))
     (terpri)
@@ -116,14 +116,14 @@
         (loop repeat (+ (* 2 size) (* 2 (1- box-size))) do (format t "-"))
         (terpri)))))
 
-(format t "~%Tabla initiala:~%")
-(afiseaza-sudoku *example-board-9x9*)
+(format t "~%Initial board:")
+(print-sudoku *example-board-9x9*)
 
 ;; Main execution
-(format t "~%Se rezolva...~%")
-(let ((solutie (rezolva *example-board-9x9*)))
+(format t "~%Solving sudoku...~%")
+(let ((solutie (solve *example-board-9x9*)))
   (if (null solutie)
-      (format t "Esec: tabla initiala incorecta sau puzzle-ul nu are solutie~%")
+      (format t "Failure: incorrect initial board or sudoku has no solution!~%")
       (progn
-        (format t "~%Solutie finala:~%")
-        (afiseaza-sudoku solutie))))
+        (format t "~%Solution:")
+        (print-sudoku solutie))))
