@@ -55,11 +55,26 @@
 
 
 (defun run-demo ()
-  (format t "~%=== Generating 4x4 puzzle (8 empty cells) ===~%")
-  (multiple-value-bind (puzzle solution) (generate-4x4 8)
+  "Whole logic: generating puzzle, steps for solving through backtracking and printing results"
+
+  ;; 4x4 demo
+  (format t "~%=== Generating 4x4 puzzle (8 empty cells) ===")
+  (multiple-value-bind (puzzle _) (generate-4x4 8)
+    (declare (ignore _))
     (format t "~%Generated puzzle:")
     (print-sudoku puzzle)
-    (format t "~%Complete solution:")
-    (print-sudoku solution)))
 
-(run-demo)
+    (let ((solution4x4 (solve puzzle t)))
+      (format t "~%Complete solution:")
+      (print-sudoku solution4x4)))
+
+  ;; 9x9 demo
+  (format t "~%=== Generating 9x9 puzzle ===")
+  (multiple-value-bind (puzzle _) (generate-9x9 40)
+    (declare (ignore _))
+    (format t "~%Generated puzzle:")
+    (print-sudoku puzzle)
+
+    (let ((solution9x9 (solve puzzle t)))
+      (format t "~%Complete solution:")
+      (print-sudoku solution9x9))))

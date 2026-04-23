@@ -1,24 +1,3 @@
-
-(defparameter *example-board-4x4*
-  '((1 0 3 0)
-    (0 2 0 4)
-    (0 0 2 0)
-    (4 0 0 3))) ;; example of invalid table
-
-(defparameter *empty-board-4x4*
-  (loop repeat 4 collect (loop repeat 4 collect 0)))
-
-(defparameter *example-board-9x9*
-  '((5 3 0 0 7 0 0 0 0)
-    (6 0 0 1 9 5 0 0 0)
-    (0 9 8 0 0 0 0 6 0)
-    (8 0 0 0 6 0 0 0 3)
-    (4 0 0 8 0 3 0 0 1)
-    (7 0 0 0 2 0 0 0 6)
-    (0 6 0 0 0 0 2 8 0)
-    (0 0 0 4 1 9 0 0 5)
-    (0 0 0 0 8 0 0 7 9))) ;; example of valid table
-
 (defun board-size (board)
   (length board))
 
@@ -68,41 +47,8 @@
     nil))
 
 
-(defun print-board (board)
-  (dolist (row board)
-    (format t "~A~%" row))
-  (format t "~%"))
-
-
-;; Tests- to do: put in a another file
-;; 0.1
-(format t "First empty cell: ~A~%" (find-empty *example-board-4x4*))
-
-;; T
-(format t "Is 4 valid at (0,1)? ~A~%" (valid? *example-board-4x4* 0 1 4))
-
-;; NIL
-(format t "Is 1 valid at (0,1)? ~A~%" (valid? *example-board-4x4* 0 1 1))
-
-;; NIL
-(format t "Is 3 valid at (0,1)? ~A~%" (valid? *example-board-4x4* 0 1 3))
-
-
-;; Solving logic using backtracking
-(defun solve (board)
-  (let ((empty-cell (find-empty board)))
-    (if (not empty-cell)
-        board ;; found a solution
-        (let ((row (car empty-cell)) (col (cdr empty-cell)) (size (board-size board)))
-          (loop for val from 1 to size
-                do (when (valid? board row col val)
-                     (let ((result (solve (set-value board row col val))))
-                       (when result
-                         (return-from solve result))))
-                finally (return nil)))))) ;; no solution
-
-;; Print board in a readable format
 (defun print-sudoku (board)
+  "Printing board in a readable format"
   (let* ((size (length board))
          (box-size (isqrt size)))
     (terpri)
@@ -116,14 +62,22 @@
         (loop repeat (+ (* 2 size) (* 2 (1- box-size))) do (format t "-"))
         (terpri)))))
 
-(format t "~%Initial board:")
-(print-sudoku *example-board-9x9*)
 
-;; Main execution
-(format t "~%Solving sudoku...~%")
-(let ((solutie (solve *example-board-9x9*)))
-  (if (null solutie)
-      (format t "Failure: incorrect initial board or sudoku has no solution!~%")
-      (progn
-        (format t "~%Solution:")
-        (print-sudoku solutie))))
+(defun solve (board &optional (verbose nil) (depth 0))
+  "Solving logic using backtracking"
+  (let ((empty-cell (find-empty board)))
+    (if (not empty-cell)
+        board ;; found a solution
+        (let ((row (car empty-cell)) (col (cdr empty-cell)) (size (board-size board)))
+          (loop for val from 1 to size
+                do (when (valid? board row col val)
+                    (when (and verbose (< depth 5)) ; limit verbose output to first 5 levels
+                      (format t "~%Step [Depth ~A]: Placing ~A at (~A, ~A)" depth val row col)
+                      (print-sudoku (set-value board row col val)))
+
+                    (let ((result (solve (set-value board row col val) verbose (1+ depth))))
+                      (when result
+                        (return-from solve result))))
+                finally (return nil)))))) ;; no solution
+
+
