@@ -2,9 +2,10 @@ module Main where
 
 import Test.HUnit
 import Test.QuickCheck
+import Data.List (transpose, nub)
 import Data.Maybe (isJust, isNothing, fromJust)
 
-import Sudoku (Board, valid, findEmpty, setValue, boardSize)
+import Sudoku (Board, valid, findEmpty, setValue, boardSize, exampleBoard9x9)
 import Solver (solve)
 
 puzzle4x4 :: Board
@@ -18,9 +19,9 @@ puzzle4x4 =
 solution4x4 :: Board
 solution4x4 =
   [ [1, 3, 2, 4]
-  , [2, 4, 3, 1]
-  , [4, 1, 1, 3]
-  , [3, 2, 4, 2]
+  , [4, 2, 3, 1]
+  , [2, 1, 4, 3]
+  , [3, 4, 1, 2]
   ]
 
 impossible4x4 :: Board
@@ -42,18 +43,15 @@ complete4x4 =
   , [4, 3, 2, 1]
   ]
 
-puzzle9x9 :: Board
-puzzle9x9 =
-  [ [5, 3, 0, 0, 7, 0, 0, 0, 0]
-  , [6, 0, 0, 1, 9, 5, 0, 0, 0]
-  , [0, 9, 8, 0, 0, 0, 0, 6, 0]
-  , [8, 0, 0, 0, 6, 0, 0, 0, 3]
-  , [4, 0, 0, 8, 0, 3, 0, 0, 1]
-  , [7, 0, 0, 0, 2, 0, 0, 0, 6]
-  , [0, 6, 0, 0, 0, 0, 2, 8, 0]
-  , [0, 0, 0, 4, 1, 9, 0, 0, 5]
-  , [0, 0, 0, 0, 8, 0, 0, 7, 9]
-  ]
+
+allRowsValid :: Board -> Bool
+allRowsValid b = all noDuplicates b
+  where noDuplicates xs = let nz = filter (/= 0) xs
+                          in length nz == length (nub nz)
+
+isValidBoard :: Board -> Bool
+isValidBoard b = allRowsValid b && allRowsValid (transpose b)
+
 
 testValidRowOk :: Test
 testValidRowOk = TestCase $ assertBool
@@ -95,10 +93,49 @@ testFindEmptyFirst = TestCase $ assertEqual
   (findEmpty empty4x4)
 
 
+testSetValuePlaces :: Test
+testSetValuePlaces = TestCase $ assertEqual
+  "setValue: places value at correct position"
+  2
+  (setValue empty4x4 1 2 2 !! 1 !! 2)
+
+testSetValueDoesNotAffectOthers :: Test
+testSetValueDoesNotAffectOthers = TestCase $ assertEqual
+  "setValue: does not modify other cells"
+  0
+  (setValue empty4x4 1 2 2 !! 0 !! 0)
+
+testSetValuePreservesSize :: Test
+testSetValuePreservesSize = TestCase $ assertBool
+  "setValue: preserves board dimensions"
+  (let b = setValue empty4x4 1 2 2
+   in length b == 4 && all (\r -> length r == 4) b)
+
+
+testBoardSize4x4 :: Test
+testBoardSize4x4 = TestCase $ assertEqual
+  "boardSize: 4x4 board has size 4"
+  4
+  (boardSize empty4x4)
+
+testBoardSize9x9 :: Test
+testBoardSize9x9 = TestCase $ assertEqual
+  "boardSize: 9x9 board has size 9"
+  9
+  (boardSize exampleBoard9x9)
+
+
 testSolveValid4x4 :: Test
 testSolveValid4x4 = TestCase $ assertBool
   "solve: finds solution for valid 4x4 puzzle"
   (isJust $ solve puzzle4x4)
+
+-- NOU: verifică soluția exactă, nu doar că există
+testSolveExact4x4 :: Test
+testSolveExact4x4 = TestCase $ assertEqual
+  "solve: returns exact unique solution for puzzle4x4"
+  (Just solution4x4)
+  (solve puzzle4x4)
 
 testSolveImpossible :: Test
 testSolveImpossible = TestCase $ assertBool
@@ -119,7 +156,7 @@ testSolveComplete = TestCase $ assertEqual
 testSolve9x9 :: Test
 testSolve9x9 = TestCase $ assertBool
   "solve: finds solution for 9x9 puzzle"
-  (isJust $ solve puzzle9x9)
+  (isJust $ solve exampleBoard9x9)
 
 testSolveNoEmpties :: Test
 testSolveNoEmpties = TestCase $ assertBool
@@ -128,18 +165,37 @@ testSolveNoEmpties = TestCase $ assertBool
     Nothing  -> False
     Just sol -> all (/= 0) (concat sol))
 
+testSolveProducesValidBoard :: Test
+testSolveProducesValidBoard = TestCase $ assertBool
+  "solve: returned board is valid (no duplicates on rows/cols)"
+  (case solve puzzle4x4 of
+    Nothing  -> False
+    Just sol -> isValidBoard sol)
+
 prop_solveNoZeros :: Bool
 prop_solveNoZeros =
-  case solve puzzle9x9 of
+  case solve puzzle4x4 of
     Nothing  -> False
     Just sol -> all (/= 0) (concat sol)
-
 
 prop_solveSameSize :: Bool
 prop_solveSameSize =
   case solve puzzle4x4 of
     Nothing  -> True
     Just sol -> length sol == 4 && all (\r -> length r == 4) sol
+
+prop_setValueGetValue :: Int -> Int -> Int -> Property
+prop_setValueGetValue r c v =
+  r >= 0 && r < 4 && c >= 0 && c < 4 && v >= 1 && v <= 4 ==>
+    (setValue empty4x4 r c v !! r !! c) == v
+
+
+prop_setValuePreservesSize :: Int -> Int -> Int -> Property
+prop_setValuePreservesSize r c v =
+  r >= 0 && r < 4 && c >= 0 && c < 4 && v >= 1 && v <= 4 ==>
+    let b = setValue empty4x4 r c v
+    in length b == 4 && all (\row -> length row == 4) b
+
 
 
 testsValid :: Test
@@ -152,32 +208,59 @@ testsValid = TestList
 
 testsFindEmpty :: Test
 testsFindEmpty = TestList
-  [ TestLabel "findEmpty - empty exists"    testFindEmptyExists
+  [ TestLabel "findEmpty - empty exists" testFindEmptyExists
   , TestLabel "findEmpty - full board"   testFindEmptyNone
-  , TestLabel "findEmpty - empty board"   testFindEmptyFirst
+  , TestLabel "findEmpty - empty board"  testFindEmptyFirst
+  ]
+
+testsSetValue :: Test
+testsSetValue = TestList
+  [ TestLabel "setValue - places value"          testSetValuePlaces
+  , TestLabel "setValue - does not affect others" testSetValueDoesNotAffectOthers
+  , TestLabel "setValue - preserves size"        testSetValuePreservesSize
+  ]
+
+testsBoardSize :: Test
+testsBoardSize = TestList
+  [ TestLabel "boardSize - 4x4" testBoardSize4x4
+  , TestLabel "boardSize - 9x9" testBoardSize9x9
   ]
 
 testsSolve :: Test
 testsSolve = TestList
-  [ TestLabel "solve - 4x4 valid"       testSolveValid4x4
-  , TestLabel "solve - impossible"       testSolveImpossible
-  , TestLabel "solve - empty"           testSolveEmpty
-  , TestLabel "solve - complete"        testSolveComplete
-  , TestLabel "solve - 9x9"            testSolve9x9
-  , TestLabel "solve - no zeros"    testSolveNoEmpties
+  [ TestLabel "solve - 4x4 valid"           testSolveValid4x4
+  , TestLabel "solve - 4x4 exact solution"  testSolveExact4x4
+  , TestLabel "solve - impossible"          testSolveImpossible
+  , TestLabel "solve - empty"               testSolveEmpty
+  , TestLabel "solve - complete"            testSolveComplete
+  , TestLabel "solve - 9x9"                 testSolve9x9
+  , TestLabel "solve - no zeros"            testSolveNoEmpties
+  , TestLabel "solve - valid board"         testSolveProducesValidBoard
   ]
 
 allTests :: Test
 allTests = TestList
-  [ TestLabel "=== valid ==="      testsValid
+  [ TestLabel "=== valid ==="     testsValid
   , TestLabel "=== findEmpty ===" testsFindEmpty
+  , TestLabel "=== setValue ===" testsSetValue
+  , TestLabel "=== boardSize ===" testsBoardSize
   , TestLabel "=== solve ==="     testsSolve
   ]
 
+-- ============================================================
+-- MAIN
+-- ============================================================
 
+main :: IO ()
 main = do
   putStrLn "\n=== HUnit Tests ===\n"
   _ <- runTestTT allTests
   putStrLn "\n=== QuickCheck Tests ===\n"
+  putStrLn "prop_solveNoZeros:"
   quickCheck prop_solveNoZeros
+  putStrLn "prop_solveSameSize:"
   quickCheck prop_solveSameSize
+  putStrLn "prop_setValueGetValue:"
+  quickCheck prop_setValueGetValue
+  putStrLn "prop_setValuePreservesSize:"
+  quickCheck prop_setValuePreservesSize
