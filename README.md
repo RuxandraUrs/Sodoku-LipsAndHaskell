@@ -51,14 +51,32 @@ The solver uses a Backtracking algorithm combined with Constraint Propagation.
     
 
 ## Running the solvers - user input
-* **Huskell** solver displays a random generated board and solves it.
-  - you should open the terminal in the project directory and start the interactive environment using
+* **Haskell** solver displays a random generated board and solves it.
+  - you should open the terminal in the project directory and start the interactive environment using:
 
         stack ghci
-   
-  - and run the solver (example for $4 \times 4$ board) :
 
-        solveVerboseLimited 10 exampleBoard4*4
+  - once in the `ghci>` prompt, you can run the solver. Display the initial board (4x4 puzzle):
+
+        printBoard exampleBoard4x4
+
+  - solve and display the solution (4x4):
+
+        solveAndPrint exampleBoard4x4
+
+  - solve and display the solution (9x9 - classic Sudoku puzzle):
+
+        solveAndPrint exampleBoard9x9
+
+  - show the BACKTRACKING steps (example for 4x4 board):
+
+        solveVerboseLimited 10 exampleBoard4x4
+
+* **Testing** the Haskell implementation:
+  - inside the interactive environment, load the tests module and run it:
+
+        :l Tests
+        main
 
       
 * **Lisp** solver that displays an random generated grid(both $9 \times 9$ and $4 \times 4$ grids) and solves it
@@ -70,6 +88,8 @@ The solver uses a Backtracking algorithm combined with Constraint Propagation.
    
 ## Example of system output(Lisp)
 <img width="516" height="474" alt="image" src="https://github.com/user-attachments/assets/0ddb6380-012b-461c-8854-a7324856a19f" />
+## Example of system output(Huskel)
+<img width="383" height="325" alt="image" src="https://github.com/user-attachments/assets/7f1b5a66-d196-4d90-982a-1a41b22858e7" />
 
 
 ### Members:
@@ -78,4 +98,4 @@ The solver uses a Backtracking algorithm combined with Constraint Propagation.
 * **Vaida Raluca Maria (10LF333)**
 * **Vîlcu Andreea (10LF333)**
   
-**[Access Project Documentation]**
+[Access Project Documentation](https://github.com/RuxandraUrs/Sodoku-LipsAndHaskell/blob/main/Sudoku.pdf)
