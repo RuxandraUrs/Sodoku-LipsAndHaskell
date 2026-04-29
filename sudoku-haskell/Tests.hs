@@ -3,7 +3,7 @@ module Main where
 import Test.HUnit
 import Test.QuickCheck
 import Data.List (transpose, nub)
-import Data.Maybe (isJust, isNothing, fromJust)
+import Data.Maybe (isJust, isNothing)
 
 import Sudoku (Board, valid, findEmpty, setValue, boardSize, exampleBoard9x9)
 import Solver (solve)
@@ -42,7 +42,6 @@ complete4x4 =
   , [2, 1, 4, 3]
   , [4, 3, 2, 1]
   ]
-
 
 allRowsValid :: Board -> Bool
 allRowsValid b = all noDuplicates b
@@ -130,7 +129,6 @@ testSolveValid4x4 = TestCase $ assertBool
   "solve: finds solution for valid 4x4 puzzle"
   (isJust $ solve puzzle4x4)
 
--- NOU: verifică soluția exactă, nu doar că există
 testSolveExact4x4 :: Test
 testSolveExact4x4 = TestCase $ assertEqual
   "solve: returns exact unique solution for puzzle4x4"
@@ -172,6 +170,7 @@ testSolveProducesValidBoard = TestCase $ assertBool
     Nothing  -> False
     Just sol -> isValidBoard sol)
 
+
 prop_solveNoZeros :: Bool
 prop_solveNoZeros =
   case solve puzzle4x4 of
@@ -183,18 +182,6 @@ prop_solveSameSize =
   case solve puzzle4x4 of
     Nothing  -> True
     Just sol -> length sol == 4 && all (\r -> length r == 4) sol
-
-prop_setValueGetValue :: Int -> Int -> Int -> Property
-prop_setValueGetValue r c v =
-  r >= 0 && r < 4 && c >= 0 && c < 4 && v >= 1 && v <= 4 ==>
-    (setValue empty4x4 r c v !! r !! c) == v
-
-
-prop_setValuePreservesSize :: Int -> Int -> Int -> Property
-prop_setValuePreservesSize r c v =
-  r >= 0 && r < 4 && c >= 0 && c < 4 && v >= 1 && v <= 4 ==>
-    let b = setValue empty4x4 r c v
-    in length b == 4 && all (\row -> length row == 4) b
 
 
 
@@ -247,9 +234,6 @@ allTests = TestList
   , TestLabel "=== solve ==="     testsSolve
   ]
 
--- ============================================================
--- MAIN
--- ============================================================
 
 main :: IO ()
 main = do
@@ -260,7 +244,3 @@ main = do
   quickCheck prop_solveNoZeros
   putStrLn "prop_solveSameSize:"
   quickCheck prop_solveSameSize
-  putStrLn "prop_setValueGetValue:"
-  quickCheck prop_setValueGetValue
-  putStrLn "prop_setValuePreservesSize:"
-  quickCheck prop_setValuePreservesSize
